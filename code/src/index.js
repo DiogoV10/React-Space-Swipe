@@ -2,6 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+
+let canvas = document.getElementById("myCanvas");
+
+
 class TriangleSprite {
   constructor(x, y, gridSize, cellSize, triangleSize, color) {
       this.x = x;
@@ -67,7 +71,7 @@ class SquareSprite {
       context.stroke()
       context.closePath();
     }
-  }
+}
   
 const squareSprites = [];
 
@@ -155,12 +159,12 @@ class CircleSprite {
       context.stroke();
       context.closePath();
     }
-  }
+}
   
 
 class CanvasWrapper extends React.Component {
     componentDidMount() {
-      const canvas = document.getElementById("myCanvas");
+      canvas = document.getElementById("myCanvas");
       const ctx = canvas.getContext("2d");
       ctx.strokeStyle = "#ffffff";
       const gridSize = 10;
@@ -204,7 +208,118 @@ class CanvasWrapper extends React.Component {
         </div>
       );
     }
+}
+  
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "w") {
+    // player moved up
+    console.log('W')
+  } else if (event.key === "a") {
+    // player moved left
+    console.log('A')
+  } else if (event.key === "s") {
+    // player moved down
+    console.log('S')
+  } else if (event.key === "d") {
+    // player moved right
+    console.log('D')
   }
+});
+
+
+let initialXTouch;
+let initialYTouch;
+
+document.addEventListener("touchstart", (event) => {
+  initialXTouch = event.touches[0].clientX;
+  initialYTouch = event.touches[0].clientY;
+});
+
+document.addEventListener("touchmove", (event) => {
+  const currentX = event.touches[0].clientX;
+  const currentY = event.touches[0].clientY;
+
+  // check for left or right swipe
+  if (currentX < initialXTouch) {
+    // player swiped left
+    console.log('Left')
+  } else if (currentX > initialXTouch) {
+    // player swiped right
+    console.log('Right')
+  }
+
+  // check for up or down swipe
+  if (currentY < initialYTouch) {
+    // player swiped up
+    console.log('Up')
+  } else if (currentY > initialYTouch) {
+    // player swiped down
+    console.log('Down')
+  }
+});
+
+
+ReactDOM.render(<CanvasWrapper />, document.getElementById('root'));
+
+
+let initialXMouse;
+let initialYMouse;
+let threshold = 10; // minimum distance to move before registering as a move
+
+let direction = "none"
+
+canvas.addEventListener("mousedown", (event) => {
+  // check if mouse is within canvas
+  if (event.clientX > canvas.offsetLeft && event.clientX < canvas.offsetLeft + canvas.width &&
+      event.clientY > canvas.offsetTop && event.clientY < canvas.offsetTop + canvas.height) {
+      
+      initialXMouse = event.clientX;
+      initialYMouse = event.clientY;
+  }else{
+    direction = "none"
+  }
+});
+
+canvas.addEventListener("mousemove", (event) => {
+  if (initialXMouse && initialYMouse) {
+    const currentX = event.clientX;
+    const currentY = event.clientY;
+    const deltaX = currentX - initialXMouse;
+    const deltaY = currentY - initialYMouse;
+
+    // check if player has moved more in the x direction than the y direction
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (deltaX > threshold) {
+            // player moved right
+            direction = "Right"
+        } else if (deltaX < -threshold) {
+            // player moved left
+            direction = "Left"
+        }
+    } else {
+        if (deltaY > threshold) {
+            // player moved down
+            direction = "Down"
+        } else if (deltaY < -threshold) {
+            // player moved up
+            direction = "Up"
+        }
+    }
+  }
+});
+
+
+document.addEventListener("mouseup", (event) => {
+  // player stopped moving
+  initialXMouse = null;
+  initialYMouse = null;
+  console.log(direction)
+
+
+  
+  direction = "none"
+});
+
   
   
-  ReactDOM.render(<CanvasWrapper />, document.getElementById('root'));
