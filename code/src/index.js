@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+let Decimal = require("decimal.js");
+
 
 let canvas = document.getElementById("myCanvas");
 let ctx = null;
@@ -94,11 +96,14 @@ changeLevel(levelNumber)
 
 
 class TriangleSprite {
-  constructor(x, y, triangleSize, color) {
+  constructor(x, y, triangleSize, color, movement) {
       this.x = x * cellSize + cellSize / 2;
       this.y = y * cellSize + cellSize / 2;
       this.triangleSize = triangleSize;
       this.color = color;
+      this.hide = false;
+      this.movement = movement;
+      this.speed = 1
   }
 
   draw(context) {
@@ -123,14 +128,115 @@ class TriangleSprite {
     context.stroke();
     context.closePath();
   }
+
+  update() {
+    if (!this.hide){
+      this.draw(ctx)
+
+      this.move()
+  
+      this.grid()
+  
+      this.collision()
+    }
+  }
+
+  move() {
+    if (this.movement == 'Right'){
+      this.x += this.speed
+    }
+    if (this.movement == 'Left'){
+      this.x -= this.speed
+    }
+    if (this.movement == 'Up'){
+      this.y -= this.speed
+    }
+    if (this.movement == 'Down'){
+      this.y += this.speed
+    }
+  }
+
+  grid() {
+    let hasSquare = false
+    //check for collision with edges of grid
+    if (this.x + this.triangleSize / 2 > gridSize * cellSize && this.movement == 'Right') {
+      hasSquare = squareInGridSquare(0 + cellSize, this.y)
+      if (hasSquare){
+        this.x = gridSize * cellSize - cellSize / 2
+        this.movement = 'Left'
+      }else{
+        this.x = 0
+      }
+    }else if (this.x - this.triangleSize / 2 < 0 && this.movement == 'Left'){
+      hasSquare = squareInGridSquare(gridSize * cellSize, this.y)
+      if (hasSquare){
+        this.x = 0 + cellSize / 2
+        this.movement = 'Right'
+      }else{
+        this.x = gridSize * cellSize
+      }
+    }
+    if (this.y + this.triangleSize / 2 > gridSize * cellSize && this.movement == 'Down'){
+      hasSquare = squareInGridSquare(this.x, 0 + cellSize)
+      if (hasSquare){
+        this.y = gridSize * cellSize - cellSize / 2
+        this.movement = 'Up'
+      }else{
+        this.y = 0
+      }
+    }else if (this.y - this.triangleSize / 2 < 0 && this.movement == 'Up') {
+      hasSquare = squareInGridSquare(this.x, gridSize * cellSize)
+      if (hasSquare){
+        this.y = 0 + cellSize / 2
+        this.movement = 'Down'
+      }else{
+        this.y = gridSize * cellSize
+      }
+    }
+  }
+
+  collision() {
+    let hasSquare = false
+    if (this.movement == 'Right'){
+      hasSquare = squareInGridSquare(this.x + this.triangleSize/2, this.y)
+      if (hasSquare){
+        this.movement = 'Left'
+      }
+    }
+    if (this.movement == 'Left'){
+      hasSquare = squareInGridSquare(this.x, this.y)
+      if (hasSquare){
+        this.movement = 'Right'
+      }
+    }
+    if (this.movement == 'Up'){
+      hasSquare = squareInGridSquare(this.x, this.y)
+      if (hasSquare){
+        this.movement = 'Down'
+      }
+    }
+    if (this.movement == 'Down'){
+      hasSquare = squareInGridSquare(this.x, this.y + this.triangleSize/2)
+      if (hasSquare){
+        this.movement = 'Up'
+      }
+      
+    }
+  }
 }
 
 const triangleSprites = [];
 
 function drawTriangleSprites(context) {
-    triangleSprites.forEach(function(triangleSprite) {
-        triangleSprite.draw(context);
-    });
+  triangleSprites.forEach(function(triangleSprite) {
+      triangleSprite.draw(context);
+  });
+}
+
+function updateTriangleSprites() {
+  triangleSprites.forEach(function(triangleSprite) {
+      triangleSprite.update();
+  });
 }
 
 
@@ -170,7 +276,11 @@ class StarSprite {
       this.x = x * cellSize + cellSize / 2;
       this.y = y * cellSize + cellSize / 2;
       this.starSize = starSize;
+      this.initialStarSize = starSize;
+      this.isTotalSize = false
+      this.growthSpeed = 0.1
       this.color = color;
+      this.hide = false;
   }
 
   draw(context) {
@@ -211,12 +321,31 @@ class StarSprite {
     context.stroke();
     context.restore();
   }
+
+  update() {
+    if (!this.hide){
+      this.draw(ctx)
+
+      if (this.starSize == cellSize/2){
+        this.isTotalSize = true
+      }
+      if (this.starSize == this.initialStarSize){
+        this.isTotalSize = false
+      }
+  
+      if (this.isTotalSize){
+        this.starSize = new Decimal(this.starSize).sub(this.growthSpeed).toNumber()
+      }else{
+        this.starSize = new Decimal(this.starSize).add(this.growthSpeed).toNumber()
+      }
+    }
+  }
 }
 
 let starSprite = null
 
 
-function findSquare(x, y) {
+function squareInGridSquare(x, y) {
   for (let s of squareSprites){
     if (s.x < x && s.x > x - cellSize){
       if (s.y < y && s.y > y - cellSize){
@@ -250,32 +379,22 @@ class CircleSprite {
       context.closePath();
     }
 
-    updateDraw(context){
-      context.strokeStyle = this.color;
-      context.beginPath();
-      context.arc(
-        this.x,
-        this.y,
-        this.circleSize / 2,
-        0,
-        2 * Math.PI
-      );
-      context.stroke();
-      context.closePath();
-    }
-
     update() {
+      this.draw(ctx)
+
       if (isMoving)
         this.move()
       
       this.grid()
+
+      this.collision()
     }
 
     grid() {
       let hasSquare = false
       //check for collision with edges of grid
       if (this.x + this.circleSize / 2 > gridSize * cellSize && direction == 'Right') {
-        hasSquare = findSquare(0 + cellSize, this.y)
+        hasSquare = squareInGridSquare(0 + cellSize, this.y)
         if (hasSquare){
           this.x = gridSize * cellSize - cellSize / 2
           isMoving = false
@@ -284,7 +403,7 @@ class CircleSprite {
           this.x = 0
         }
       }else if (this.x - this.circleSize / 2 < 0 && direction == 'Left'){
-        hasSquare = findSquare(gridSize * cellSize, this.y)
+        hasSquare = squareInGridSquare(gridSize * cellSize, this.y)
         if (hasSquare){
           this.x = 0 + cellSize / 2
           isMoving = false
@@ -294,7 +413,7 @@ class CircleSprite {
         }
       }
       if (this.y + this.circleSize / 2 > gridSize * cellSize && direction == 'Down'){
-        hasSquare = findSquare(this.x, 0 + cellSize)
+        hasSquare = squareInGridSquare(this.x, 0 + cellSize)
         if (hasSquare){
           this.y = gridSize * cellSize - cellSize / 2
           isMoving = false
@@ -303,7 +422,7 @@ class CircleSprite {
           this.y = 0
         }
       }else if (this.y - this.circleSize / 2 < 0 && direction == 'Up') {
-        hasSquare = findSquare(this.x, gridSize * cellSize)
+        hasSquare = squareInGridSquare(this.x, gridSize * cellSize)
         if (hasSquare){
           this.y = 0 + cellSize / 2
           isMoving = false
@@ -311,6 +430,47 @@ class CircleSprite {
         }else{
           this.y = gridSize * cellSize
         }
+      }
+    }
+
+    collision() {
+      let hasSquare = false
+      if (direction == 'Right'){
+        hasSquare = squareInGridSquare(this.x + this.circleSize/2, this.y)
+        if (hasSquare){
+          let pos = Math.floor(this.x / cellSize)
+          this.x = pos * cellSize + cellSize / 2;
+          isMoving = false
+          direction = 'none'
+        }
+      }
+      if (direction == 'Left'){
+        hasSquare = squareInGridSquare(this.x - this.circleSize/4, this.y)
+        if (hasSquare){
+          let pos = Math.floor(this.x / cellSize)
+          this.x = pos * cellSize + cellSize / 2;
+          isMoving = false
+          direction = 'none'
+        }
+      }
+      if (direction == 'Up'){
+        hasSquare = squareInGridSquare(this.x, this.y - this.circleSize/4)
+        if (hasSquare){
+          let pos = Math.floor(this.y / cellSize)
+          this.y = pos * cellSize + cellSize / 2;
+          isMoving = false
+          direction = 'none'
+        }
+      }
+      if (direction == 'Down'){
+        hasSquare = squareInGridSquare(this.x, this.y + this.circleSize/2)
+        if (hasSquare){
+          let pos = Math.floor(this.y / cellSize)
+          this.y = pos * cellSize + cellSize / 2;
+          isMoving = false
+          direction = 'none'
+        }
+        
       }
     }
 
@@ -361,18 +521,19 @@ class CanvasWrapper extends React.Component {
     circleSprite = new CircleSprite(3, 4, cellSize/2 * 1.5, "blue");
     circleSprite.draw(ctx);
 
-    starSprite = new StarSprite(1, 2, cellSize/3, "yellow");
+    starSprite = new StarSprite(1, 2, Math.floor(cellSize/10), "yellow");
     starSprite.draw(ctx);
 
     const colorT = "red"
-    triangleSprites.push(new TriangleSprite(6, 4, cellSize/3, colorT));
-    triangleSprites.push(new TriangleSprite(1, 6, cellSize/3, colorT));
+    triangleSprites.push(new TriangleSprite(6, 4, cellSize/3, colorT, 'Left'));
+    triangleSprites.push(new TriangleSprite(1, 6, cellSize/3, colorT, 'Down'));
     drawTriangleSprites(ctx);
 
     const color = "green"
-    squareSprites.push(new SquareSprite(4, 4, cellSize/2 * 1.5, color));
-    squareSprites.push(new SquareSprite(5, 6, cellSize/2 * 1.5, color));
+    squareSprites.push(new SquareSprite(7, 4, cellSize/2 * 1.5, color));
+    squareSprites.push(new SquareSprite(3, 6, cellSize/2 * 1.5, color));
     squareSprites.push(new SquareSprite(3, 0, cellSize/2 * 1.5, color));
+    squareSprites.push(new SquareSprite(2, 4, cellSize/2 * 1.5, color));
     drawSquareSprites(ctx);
     
   }
@@ -520,11 +681,10 @@ setInterval(() => {
     }
 
     circleSprite.update()
-    circleSprite.updateDraw(ctx)
 
-    starSprite.draw(ctx)
+    starSprite.update()
 
-    drawTriangleSprites(ctx);
+    updateTriangleSprites();
 
     drawSquareSprites(ctx);
 
