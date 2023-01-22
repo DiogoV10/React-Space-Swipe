@@ -582,6 +582,15 @@ let circleSprite = null
 
 
 
+function randomLightColor() {
+  const hexValues = "0123456789ABCDEF";
+  let color = "#";
+  for (let i = 0; i < 6; i++) {
+    color += hexValues[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
 function loadLevel() {
   circleSprite = null;
   starSprite = null;
@@ -599,7 +608,7 @@ function loadLevel() {
     let secondDigit = Math.floor(number / 10);
 
     if (levels[i] == '1'){
-      const color = "green"
+      const color = randomLightColor()
       squareSprites.push(new SquareSprite(firstDigit, secondDigit, cellSize/2 * 1.5, color));
     }
 
@@ -809,4 +818,4 @@ setInterval(() => {
     drawSquareSprites(ctx);
 
     document.getElementById("score").innerHTML = "Score: " + score;
-},1)
+}, 1)
