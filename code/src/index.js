@@ -111,6 +111,7 @@ class TriangleSprite {
   }
 
   draw(context) {
+    context.lineWidth = 2;
     context.strokeStyle = this.color;
     context.beginPath();
     context.moveTo(
@@ -248,6 +249,7 @@ class SquareSprite {
     }
   
     draw(context) {
+      context.lineWidth = 4;
       context.strokeStyle = this.color;
       context.beginPath();
       context.strokeRect(
@@ -284,6 +286,7 @@ class StarSprite {
   }
 
   draw(context) {
+    context.lineWidth = 2;
     context.strokeStyle = this.color;
     //Draw the star
     context.beginPath();
@@ -378,10 +381,11 @@ class CircleSprite {
       this.y = y * cellSize + cellSize / 2;
       this.circleSize = circleSize
       this.color = color;
-      this.speed = 2;
+      this.speed = 4;
     }
   
     draw(context) {
+      context.lineWidth = 2;
       context.strokeStyle = this.color;
       context.beginPath();
       context.arc(
@@ -552,18 +556,7 @@ function loadLevel() {
   isMoving = false;
   direction = 'none';
 
-
-  for (let i = 0; i <= gridSize; i++) {
-    ctx.moveTo(i * cellSize, 0);
-    ctx.lineTo(i * cellSize, canvas.height);
-    ctx.stroke();
-  }
-
-  for (let i = 0; i <= gridSize; i++) {
-    ctx.moveTo(0, i * cellSize);
-    ctx.lineTo(canvas.width, i * cellSize);
-    ctx.stroke();
-  }
+  ctx.lineWidth = 1;
   
   for (let i = 0; i < levels.length; i++){
     let number = i;
@@ -755,18 +748,19 @@ setInterval(() => {
     gridSize = 10;
     cellSize = canvas.width / gridSize;
     ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
 
-    for (let i = 0; i <= gridSize; i++) {
-      ctx.moveTo(i * cellSize, 0);
-      ctx.lineTo(i * cellSize, canvas.height);
-      ctx.stroke();
-    }
+    // for (let i = 0; i <= gridSize; i++) {
+    //   ctx.moveTo(i * cellSize, 0);
+    //   ctx.lineTo(i * cellSize, canvas.height);
+    //   ctx.stroke();
+    // }
 
-    for (let i = 0; i <= gridSize; i++) {
-      ctx.moveTo(0, i * cellSize);
-      ctx.lineTo(canvas.width, i * cellSize);
-      ctx.stroke();
-    }
+    // for (let i = 0; i <= gridSize; i++) {
+    //   ctx.moveTo(0, i * cellSize);
+    //   ctx.lineTo(canvas.width, i * cellSize);
+    //   ctx.stroke();
+    // }
 
     circleSprite.update()
 
