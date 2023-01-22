@@ -27,6 +27,9 @@ let score = 0;
 let currentscore = 0;
 
 
+
+
+
 var fileText
     
 const file = 'levels.txt'
@@ -614,6 +617,8 @@ class CanvasWrapper extends React.Component {
     cellSize = canvas.width / gridSize;
     
     loadLevel()
+
+    
   }
 
   render() {
@@ -621,6 +626,7 @@ class CanvasWrapper extends React.Component {
       <div id="container">
         <canvas id="myCanvas" width="700" height="700"></canvas>
         <button id="restartButton">Restart</button>
+        <p id="score">Score:</p>
       </div>
     );
   }
@@ -769,4 +775,6 @@ setInterval(() => {
     updateTriangleSprites();
 
     drawSquareSprites(ctx);
+
+    document.getElementById("score").innerHTML = "Score: " + score;
 },1)
