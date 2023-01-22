@@ -76,7 +76,7 @@ function changeLevel(){
   levelsCount = myArray.length - 1
   if(levelNumber > levelsCount){
     levelNumber = 1
-    changeLevel(levelNumber)
+    changeLevel()
   }else{
     let text = myArray[levelNumber]
     let myArray2 = text.split("}")
