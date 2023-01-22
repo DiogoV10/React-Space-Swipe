@@ -8,6 +8,8 @@ let Decimal = require("decimal.js");
 let canvas = document.getElementById("myCanvas");
 let ctx = null;
 
+let restart = document.getElementById('restartButton')
+
 let gridSize = 10;
 let cellSize = null;
 
@@ -21,10 +23,13 @@ let initialYTouch;
 let initialXMouse;
 let initialYMouse;
 
+let score = 0;
+let currentscore = 0;
+
 
 var fileText
     
-const file = './levels.txt'
+const file = 'levels.txt'
 
 function readFile(file){
   var rawFile = new XMLHttpRequest();
@@ -64,15 +69,14 @@ let levels = []
 let levelNumber = 1
 let levelsCount = 0
 
-function changeLevel(levelNumber){
+function changeLevel(){
   levels.length = 0
 
   let myArray = fileText.split("{")
-
   levelsCount = myArray.length - 1
-
   if(levelNumber > levelsCount){
     levelNumber = 1
+    changeLevel(levelNumber)
   }else{
     let text = myArray[levelNumber]
     let myArray2 = text.split("}")
@@ -81,17 +85,17 @@ function changeLevel(levelNumber){
 
     for(let i = 1; i <= 10; i++){
 
-        let text3 = myArray3[i]
-        let myArray4 = text3.split(";")
+      let text3 = myArray3[i]
+      let myArray4 = text3.split(";")
 
-        for(let j = 0; j < 10; j++){
-            levels.push(myArray4[j])
-        }
+      for(let j = 0; j < 10; j++){
+          levels.push(myArray4[j])
+      }
     }
   }
 }
 
-changeLevel(levelNumber)
+changeLevel()
 
 
 
@@ -227,17 +231,12 @@ class TriangleSprite {
 
 const triangleSprites = [];
 
-function drawTriangleSprites(context) {
-  triangleSprites.forEach(function(triangleSprite) {
-      triangleSprite.draw(context);
-  });
-}
-
 function updateTriangleSprites() {
   triangleSprites.forEach(function(triangleSprite) {
       triangleSprite.update();
   });
 }
+
 
 
 class SquareSprite {
@@ -271,6 +270,7 @@ function drawSquareSprites(context) {
 }
   
 
+
 class StarSprite {
   constructor(x, y, starSize, color) {
       this.x = x * cellSize + cellSize / 2;
@@ -280,7 +280,7 @@ class StarSprite {
       this.isTotalSize = false
       this.growthSpeed = 0.1
       this.color = color;
-      this.hide = false;
+      this.hide = true;
   }
 
   draw(context) {
@@ -345,6 +345,22 @@ class StarSprite {
 let starSprite = null
 
 
+
+function distance(x1, y1, x2, y2) {
+  return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+}
+
+function starInGridSquare(x, y) {
+  if (!starSprite.hide){
+    if (starSprite.x < x + cellSize / 2 && starSprite.x > x - cellSize / 2){
+      if (starSprite.y < y + cellSize / 2 && starSprite.y > y - cellSize / 2){
+        return true
+      }
+    }
+  }
+  return false
+}
+
 function squareInGridSquare(x, y) {
   for (let s of squareSprites){
     if (s.x < x && s.x > x - cellSize){
@@ -362,7 +378,7 @@ class CircleSprite {
       this.y = y * cellSize + cellSize / 2;
       this.circleSize = circleSize
       this.color = color;
-      this.speed = 1;
+      this.speed = 2;
     }
   
     draw(context) {
@@ -387,7 +403,11 @@ class CircleSprite {
       
       this.grid()
 
-      this.collision()
+      this.squareCollision()
+
+      this.triangleCollision()
+
+      this.starCollision()
     }
 
     grid() {
@@ -433,7 +453,7 @@ class CircleSprite {
       }
     }
 
-    collision() {
+    squareCollision() {
       let hasSquare = false
       if (direction == 'Right'){
         hasSquare = squareInGridSquare(this.x + this.circleSize/2, this.y)
@@ -470,7 +490,34 @@ class CircleSprite {
           isMoving = false
           direction = 'none'
         }
-        
+      }
+    }
+
+    triangleCollision() {
+      for (let t of triangleSprites) {
+        if (!t.hide) {
+          let dist = distance(this.x, this.y, t.x, t.y);
+          let radiusSum = (this.circleSize / 2) + (t.triangleSize / 2);
+          if (dist <= radiusSum) {
+            t.hide = true;
+            currentscore++;
+            if (currentscore == triangleSprites.length){
+              starSprite.hide = false;
+            }
+          }
+        }
+      }
+    }
+
+    starCollision() {
+      let hasStar = false;
+      hasStar = starInGridSquare(this.x, this.y);
+
+      if (hasStar){
+        score += currentscore + 2;
+        levelNumber++;
+        changeLevel();
+        loadLevel();
       }
     }
 
@@ -494,6 +541,72 @@ class CircleSprite {
   
 let circleSprite = null
 
+
+
+function loadLevel() {
+  circleSprite = null;
+  starSprite = null;
+  squareSprites.length = 0;
+  triangleSprites.length = 0;
+  currentscore = 0;
+  isMoving = false;
+  direction = 'none';
+
+
+  for (let i = 0; i <= gridSize; i++) {
+    ctx.moveTo(i * cellSize, 0);
+    ctx.lineTo(i * cellSize, canvas.height);
+    ctx.stroke();
+  }
+
+  for (let i = 0; i <= gridSize; i++) {
+    ctx.moveTo(0, i * cellSize);
+    ctx.lineTo(canvas.width, i * cellSize);
+    ctx.stroke();
+  }
+  
+  for (let i = 0; i < levels.length; i++){
+    let number = i;
+    let firstDigit = number % 10;
+    let secondDigit = Math.floor(number / 10);
+
+    if (levels[i] == '1'){
+      const color = "green"
+      squareSprites.push(new SquareSprite(firstDigit, secondDigit, cellSize/2 * 1.5, color));
+    }
+
+    if (levels[i] == '2'){
+      circleSprite = new CircleSprite(firstDigit, secondDigit, cellSize/2 * 1.5, "blue");
+    }
+
+    if (levels[i] == '3'){
+      triangleSprites.push(new TriangleSprite(firstDigit, secondDigit, cellSize/3, 'red', 'none'));
+    }
+
+    if (levels[i] == '30'){
+      triangleSprites.push(new TriangleSprite(firstDigit, secondDigit, cellSize/3, 'red', 'Right'));
+    }
+
+    if (levels[i] == '31'){
+      triangleSprites.push(new TriangleSprite(firstDigit, secondDigit, cellSize/3, 'red', 'Left'));
+    }
+
+    if (levels[i] == '32'){
+      triangleSprites.push(new TriangleSprite(firstDigit, secondDigit, cellSize/3, 'red', 'Up'));
+    }
+
+    if (levels[i] == '33'){
+      triangleSprites.push(new TriangleSprite(firstDigit, secondDigit, cellSize/3, 'red', 'Down'));
+    }
+
+    if (levels[i] == '4'){
+      starSprite = new StarSprite(firstDigit, secondDigit, Math.floor(cellSize/10), "yellow");
+    }
+  }
+
+
+}
+
 class CanvasWrapper extends React.Component {
   constructor(props) {
     super(props);
@@ -503,39 +616,11 @@ class CanvasWrapper extends React.Component {
   componentDidMount() {
     canvas = document.getElementById("myCanvas");
     ctx = canvas.getContext("2d");
+    restart = document.getElementById('restartButton')
     ctx.strokeStyle = "#ffffff";
     cellSize = canvas.width / gridSize;
-
-    for (let i = 0; i <= gridSize; i++) {
-      ctx.moveTo(i * cellSize, 0);
-      ctx.lineTo(i * cellSize, canvas.height);
-      ctx.stroke();
-    }
-
-    for (let i = 0; i <= gridSize; i++) {
-      ctx.moveTo(0, i * cellSize);
-      ctx.lineTo(canvas.width, i * cellSize);
-      ctx.stroke();
-    }
     
-    circleSprite = new CircleSprite(3, 4, cellSize/2 * 1.5, "blue");
-    circleSprite.draw(ctx);
-
-    starSprite = new StarSprite(1, 2, Math.floor(cellSize/10), "yellow");
-    starSprite.draw(ctx);
-
-    const colorT = "red"
-    triangleSprites.push(new TriangleSprite(6, 4, cellSize/3, colorT, 'Left'));
-    triangleSprites.push(new TriangleSprite(1, 6, cellSize/3, colorT, 'Down'));
-    drawTriangleSprites(ctx);
-
-    const color = "green"
-    squareSprites.push(new SquareSprite(7, 4, cellSize/2 * 1.5, color));
-    squareSprites.push(new SquareSprite(3, 6, cellSize/2 * 1.5, color));
-    squareSprites.push(new SquareSprite(3, 0, cellSize/2 * 1.5, color));
-    squareSprites.push(new SquareSprite(2, 4, cellSize/2 * 1.5, color));
-    drawSquareSprites(ctx);
-    
+    loadLevel()
   }
 
   render() {
@@ -551,6 +636,12 @@ class CanvasWrapper extends React.Component {
 
 ReactDOM.render(<CanvasWrapper />, document.getElementById('root'));
   
+
+
+restart.addEventListener('click', function changeMode() {
+  loadLevel()
+})
+
 
 document.addEventListener("keydown", (event) => {
   if (!isMoving){
@@ -661,11 +752,8 @@ document.addEventListener("mouseup", (event) => {
 
 setInterval(() => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-
-    const gridSize = 10;
-    const cellSize = canvas.width / gridSize;
-
+    gridSize = 10;
+    cellSize = canvas.width / gridSize;
     ctx.strokeStyle = "#ffffff";
 
     for (let i = 0; i <= gridSize; i++) {
@@ -687,6 +775,4 @@ setInterval(() => {
     updateTriangleSprites();
 
     drawSquareSprites(ctx);
-
-    
 },1)
