@@ -27,6 +27,36 @@ let score = 0;
 let currentscore = 0;
 
 
+let buttonClickSound = new sound("buttonClick.wav")
+buttonClickSound.volume(0.1)
+let collectingSound = new sound("ball_collect.wav")
+collectingSound.volume(0.1)
+let collectingSound2 = new sound("ball_collect2.wav")
+collectingSound2.volume(0.1)
+let bgMusic = new sound("bgMusic.wav")
+bgMusic.volume(0.1)
+bgMusic.loop()
+
+function sound(src) {
+  this.sound = document.createElement("audio");
+  this.sound.src = src;
+  this.sound.setAttribute("preload", "auto");
+  this.sound.setAttribute("controls", "none");
+  this.sound.style.display = "none";
+  document.body.appendChild(this.sound);
+  this.play = function(){
+    this.sound.play();
+  }
+  this.stop = function(){
+    this.sound.pause();
+  }
+  this.volume = function(vol){
+      this.sound.volume = vol;
+  }
+  this.loop = function(){
+      this.sound.loop = true;
+  }
+}
 
 
 
@@ -508,6 +538,8 @@ class CircleSprite {
           if (dist <= radiusSum) {
             t.hide = true;
             currentscore++;
+            collectingSound.play()
+            collectingSound2.play()
             if (currentscore == triangleSprites.length){
               starSprite.hide = false;
             }
@@ -617,8 +649,6 @@ class CanvasWrapper extends React.Component {
     cellSize = canvas.width / gridSize;
     
     loadLevel()
-
-    
   }
 
   render() {
@@ -638,6 +668,7 @@ ReactDOM.render(<CanvasWrapper />, document.getElementById('root'));
 
 
 restart.addEventListener('click', function changeMode() {
+  buttonClickSound.play()
   loadLevel()
 })
 
@@ -755,6 +786,7 @@ setInterval(() => {
     cellSize = canvas.width / gridSize;
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 1;
+    bgMusic.play()
 
     // for (let i = 0; i <= gridSize; i++) {
     //   ctx.moveTo(i * cellSize, 0);
